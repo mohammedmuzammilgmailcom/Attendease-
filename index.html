@@ -1,1 +1,131 @@
-# Attendease-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AttendEase – Attendance &amp; Leave Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Barlow+Condensed:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f9;--sf:#fff;--tx:#14213d;--mu:#5b6678;--ln:#d9e0e8;--ink:#14213d;--am:#e8a317;--ok:#1b7f79;--bad:#b23a48;--wa:#9a6b00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1522;--sf:#162033;--tx:#e8edf5;--mu:#9aa6b8;--ln:#27344b;--ink:#0a101b;--ok:#4cc2b9;--bad:#e8788a;--wa:#f0b93a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1522;--sf:#162033;--tx:#e8edf5;--mu:#9aa6b8;--ln:#27344b;--ink:#0a101b;--ok:#4cc2b9;--bad:#e8788a;--wa:#f0b93a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 40px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0}
+.logo{font-weight:700;font-size:20px;letter-spacing:-.01em}
+.who{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mu)}
+select,input,textarea{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;max-width:100%}
+nav{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--ln);margin-bottom:20px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;color:var(--mu);font:600 15px Figtree,system-ui,sans-serif;padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--tx);border-bottom-color:var(--am)}
+.hero{display:flex;flex-wrap:wrap;align-items:center;gap:20px 32px;background:var(--ink);color:#fff;border-radius:14px;padding:24px}
+.hero .mu{color:#b9c4d6}
+.big{font:600 clamp(56px,16vw,92px)/1 "Barlow Condensed",Impact,sans-serif;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+h2{margin:0 0 4px;font-size:22px}h3{margin:28px 0 8px;font-size:17px}
+.mu{color:var(--mu);margin:0 0 12px}
+.btn{font:700 15px Figtree,system-ui,sans-serif;border:0;border-radius:8px;padding:11px 20px;cursor:pointer;background:var(--ink);color:#fff}
+.btn.am{background:var(--am);color:#14213d}
+.btn.sm{padding:7px 14px;font-size:14px}.btn.ok{background:var(--ok);color:#fff}.btn.no{background:none;color:var(--bad);border:1px solid var(--bad)}
+.btn:focus-visible,.tab:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--am);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin:20px 0 0}
+.stats b{display:block;font-size:26px;line-height:1.2}.stats span{color:var(--mu);font-size:14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--ln)}
+.row small{display:block;color:var(--mu)}
+.bd{font-weight:700;font-size:13px}.Pending{color:var(--wa)}.Approved{color:var(--ok)}.Rejected,.Cancelled{color:var(--bad)}
+.acts{display:flex;gap:8px}
+form,.form{display:grid;gap:12px;max-width:460px}
+label{display:grid;gap:4px;font-weight:600;font-size:14px}
+.bad{color:var(--bad);min-height:1.4em;margin:0}
+.bar{height:10px;border-radius:5px;background:var(--am);min-width:4px}
+.empty{color:var(--mu);padding:16px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">AttendEase</div>
+  <label class="who">Sign in as
+    <select id="role"><option>Employee</option><option>Manager</option><option>Admin</option></select>
+  </label>
+</header>
+<nav id="nav" aria-label="Main"></nav>
+<main id="main"></main>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const add=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d)};
+const tm=d=>d?new Date(d).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"–";
+const dl=d=>new Date(d+"T00:00").toLocaleDateString([],{day:"numeric",month:"short"});
+const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5)+1;
+const nowT=()=>new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+const hrs=a=>a.out?((new Date(a.out)-new Date(a.in))/36e5):0;
+const names={Employee:"Asha Rao",Manager:"Ravi Menon",Admin:"Priya Nair"};
+const tabsFor={Employee:["Dashboard","Attendance","Leave"],Manager:["Dashboard","Approvals","Reports"],Admin:["Dashboard","Approvals","Reports","Employees"]};
+function seed(){const att=[];for(let i=1;i<=7;i++){const d=new Date();d.setDate(d.getDate()-i);if(d.getDay()%6==0)continue;const k=ymd(d);att.push({date:k,in:k+"T09:0"+(i%6)+":00",out:k+"T17:3"+(i%5)+":00"})}
+return{att,bal:{Annual:{t:18,u:4},Sick:{t:12,u:1},Casual:{t:6,u:2}},n:4,reqs:[
+{id:1,emp:"Meera Iyer",type:"Sick",from:add(2),to:add(3),days:2,reason:"Fever and rest",st:"Pending"},
+{id:2,emp:"Karan Shah",type:"Annual",from:add(10),to:add(14),days:5,reason:"Family trip",st:"Pending"},
+{id:3,emp:"Asha Rao",type:"Casual",from:add(-12),to:add(-12),days:1,reason:"Personal work",st:"Approved"}]}}
+let S=null,role="Employee",tab="Dashboard";
+try{S=JSON.parse(localStorage.getItem("attendease")||"null")}catch(e){S=null}
+if(!S||!S.att)S=seed();
+const save=()=>{try{localStorage.setItem("attendease",JSON.stringify(S))}catch(e){}};
+const bd=s=>`<span class="bd ${s}">${s}</span>`;
+const rowsAtt=list=>list.length?list.map(a=>`<div class="row"><div>${dl(a.date)}<small>In ${tm(a.in)} · Out ${tm(a.out)}</small></div><b>${a.out?hrs(a).toFixed(1)+" h":"In progress"}</b></div>`).join(""):`<p class="empty">No attendance yet. Check in to start today.</p>`;
+const reqRow=(r,mine)=>`<div class="row"><div>${mine?"":`<b>${esc(r.emp)}</b> · `}${r.type} leave<small>${dl(r.from)}${r.from!==r.to?" – "+dl(r.to):""} · ${r.days} day${r.days>1?"s":""} · ${esc(r.reason)}</small></div><div class="acts">${bd(r.st)}${mine&&r.st==="Pending"?`<button class="btn sm no" data-a="cx" data-v="${r.id}">Cancel</button>`:""}</div></div>`;
+const V={};
+V.Dashboard=()=>{
+ if(role!=="Employee"){const p=S.reqs.filter(r=>r.st==="Pending").length;
+  return `<section class="hero"><div class="big">${p}</div><div><h2>Leave requests waiting</h2><p class="mu">Review and decide in Approvals.</p><button class="btn am" data-a="tab" data-v="Approvals">Review requests</button></div></section>
+  <div class="stats"><div><b>12 of 15</b><span>Employees present today</span></div><div><b>${S.reqs.filter(r=>r.st==="Approved"&&r.from<=add(0)&&r.to>=add(0)).length}</b><span>On leave today</span></div><div><b>${S.reqs.length}</b><span>Total requests</span></div></div>`}
+ const t=S.att.find(a=>a.date===add(0));
+ const left=Object.values(S.bal).reduce((a,b)=>a+b.t-b.u,0);
+ const mine=S.reqs.filter(r=>r.emp===names.Employee&&r.st==="Pending").length;
+ const wk=S.att.filter(a=>a.date>=add(-6)).reduce((s,a)=>s+hrs(a),0);
+ return `<section class="hero"><div class="big" id="clk">${nowT()}</div><div><h2>${t?(t.out?"Done for today":"You’re checked in"):"Not checked in yet"}</h2><p class="mu">${t?"In at "+tm(t.in)+(t.out?", out at "+tm(t.out):""):new Date().toLocaleDateString([],{weekday:"long",day:"numeric",month:"long"})}</p>${t&&t.out?"":`<button class="btn am" data-a="${t?"out":"in"}">${t?"Check out":"Check in"}</button>`}</div></section>
+ <div class="stats"><div><b>${left}</b><span>Leave days left</span></div><div><b>${mine}</b><span>Requests pending</span></div><div><b>${wk.toFixed(1)} h</b><span>Worked in the last 7 days</span></div></div>
+ <h3>Recent attendance</h3>${rowsAtt(S.att.slice(0,4))}`};
+V.Attendance=()=>`<h2>Attendance history</h2><p class="mu">Every check-in and check-out, newest first.</p>${rowsAtt(S.att)}`;
+V.Leave=()=>`<h2>Leave</h2><div class="stats">${Object.entries(S.bal).map(([k,v])=>`<div><b>${v.t-v.u} of ${v.t}</b><span>${k} days left</span></div>`).join("")}</div>
+ <h3>Request leave</h3><div class="form">
+ <label>Leave type<select id="lt">${Object.keys(S.bal).map(k=>`<option>${k}</option>`).join("")}</select></label>
+ <label>From<input type="date" id="lf" min="${add(0)}"></label><label>To<input type="date" id="lto" min="${add(0)}"></label>
+ <label>Reason<textarea id="lr" rows="2" placeholder="Optional"></textarea></label>
+ <p class="bad" id="lm" role="alert"></p><button class="btn am" data-a="apply">Send request</button></div>
+ <h3>My requests</h3>${S.reqs.filter(r=>r.emp===names.Employee).map(r=>reqRow(r,true)).join("")||`<p class="empty">No requests yet.</p>`}`;
+V.Approvals=()=>{const p=S.reqs.filter(r=>r.st==="Pending"),d=S.reqs.filter(r=>r.st!=="Pending");
+ return `<h2>Approvals</h2><p class="mu">Approving a request deducts the days from the employee’s balance.</p>
+ ${p.map(r=>`<div class="row"><div><b>${esc(r.emp)}</b> · ${r.type} leave<small>${dl(r.from)}${r.from!==r.to?" – "+dl(r.to):""} · ${r.days} day${r.days>1?"s":""} · ${esc(r.reason)}</small></div><div class="acts"><button class="btn sm ok" data-a="ok" data-v="${r.id}">Approve</button><button class="btn sm no" data-a="no" data-v="${r.id}">Reject</button></div></div>`).join("")||`<p class="empty">Nothing waiting. You’re all caught up.</p>`}
+ <h3>Decided</h3>${d.map(r=>reqRow(r,false)).join("")||`<p class="empty">No decisions yet.</p>`}`};
+V.Reports=()=>{const c=k=>S.reqs.filter(r=>r.st===k).length,m=Math.max(1,S.reqs.length);
+ const byT={};S.reqs.forEach(r=>byT[r.type]=(byT[r.type]||0)+r.days);const mt=Math.max(1,...Object.values(byT));
+ return `<h2>Reports</h2><h3>Requests by status</h3>${["Pending","Approved","Rejected","Cancelled"].map(k=>`<div class="row"><span>${bd(k)}</span><div style="flex:1;max-width:300px"><div class="bar" style="width:${c(k)/m*100}%"></div></div><b>${c(k)}</b></div>`).join("")}
+ <h3>Leave days by type</h3>${Object.entries(byT).map(([k,v])=>`<div class="row"><span>${k}</span><div style="flex:1;max-width:300px"><div class="bar" style="width:${v/mt*100}%"></div></div><b>${v}</b></div>`).join("")}`};
+V.Employees=()=>`<h2>Employees</h2><p class="mu">Sample directory.</p>${[["Asha Rao","Engineering","Ravi Menon"],["Meera Iyer","Design","Ravi Menon"],["Karan Shah","Finance","Priya Nair"],["Ravi Menon","Engineering","Priya Nair"]].map(e=>`<div class="row"><div><b>${e[0]}</b><small>Reports to ${e[2]}</small></div><span class="mu">${e[1]}</span></div>`).join("")}`;
+function applyLeave(){const ty=$("#lt").value,f=$("#lf").value,t=$("#lto").value,m=$("#lm");
+ if(!f||!t){m.textContent="Choose both dates.";return false}
+ if(t<f){m.textContent="The end date can’t be before the start date.";return false}
+ const n=days(f,t),b=S.bal[ty];
+ if(n>b.t-b.u){m.textContent="You have "+(b.t-b.u)+" "+ty+" days left but asked for "+n+".";return false}
+ S.reqs.unshift({id:S.n++,emp:names.Employee,type:ty,from:f,to:t,days:n,reason:$("#lr").value.trim()||"No reason given",st:"Pending"});return true}
+function render(){if(!tabsFor[role].includes(tab))tab="Dashboard";
+ $("#nav").innerHTML=tabsFor[role].map(t=>`<button class="tab${t===tab?" on":""}" data-a="tab" data-v="${t}">${t}</button>`).join("");
+ $("#main").innerHTML=V[tab]()}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,v=b.dataset.v;
+ if(a==="tab")tab=v;
+ else if(a==="in")S.att.unshift({date:add(0),in:new Date().toISOString(),out:null});
+ else if(a==="out")S.att.find(x=>x.date===add(0)).out=new Date().toISOString();
+ else if(a==="apply"){if(!applyLeave())return}
+ else if(a==="ok"||a==="no"){const r=S.reqs.find(x=>x.id==v);r.st=a==="ok"?"Approved":"Rejected";if(a==="ok"&&r.emp===names.Employee&&S.bal[r.type])S.bal[r.type].u+=r.days}
+ else if(a==="cx")S.reqs.find(x=>x.id==v).st="Cancelled";
+ save();render()});
+$("#role").addEventListener("change",e=>{role=e.target.value;tab="Dashboard";render()});
+setInterval(()=>{const c=$("#clk");if(c)c.textContent=nowT()},1000);
+render();
+</script>
+</body>
+</html>
